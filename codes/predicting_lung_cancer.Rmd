@@ -194,6 +194,250 @@ The given table represents Pearson correlation coefficients between various term
 
 In summary, the dataset's variables exhibit very weak correlations with each other, suggesting that any linear relationships are minimal or non-existent. For a more in-depth analysis, you may need to explore non-linear relationships or consider different statistical methods.
 
+## correlate between categorical variables using the Chi squared test
+
+```{r}
+# convert to categorical
+data <- data %>%
+           mutate(across(.cols = -all_of("AGE"),
+                         .fns = factor))
+
+# Load necessary packages
+library(tidyverse)
+library(vcd)
+
+# Function to perform chi-square test and generate plots
+analyze_features <- function(feature) {
+  # Create contingency table
+  contingency_table <- table(data[[feature]], data$LUNG_CANCER)
+  
+  # Perform chi-square test
+  chi_test <- chisq.test(contingency_table)
+  
+  # Print chi-square test result
+  print(paste("Chi-square test result for", feature))
+  
+  return(chi_test)
+}
+
+categorical_features <- sapply(data, is.factor)
+categorical_features <- categorical_features[categorical_features] 
+categorical_features <- names(categorical_features)[names(categorical_features) != "LUNG_CANCER"]
+
+# Perform analysis for each symptom and collect results
+results <- lapply(categorical_features, analyze_features)
+
+# Summarize chi-square test results in a data frame
+summary_results <- data.frame(
+  features = categorical_features,
+  ChiSquare = sapply(results, function(x) x$statistic),
+  pValue = sapply(results, function(x) x$p.value)
+)
+
+# Print summary of results
+summary_results <- summary_results[order(summary_results$pValue, decreasing = F), ]
+knitr::kable(summary_results,
+             caption = "Features vs lung cancer Chi squared test",
+             "pipe")
+```
+
+Based on the Chi-squared test results, here's an interpretation of the significance of each feature with respect to the event of having lung cancer:
+
+1. **WHEEZING**: 
+   - ChiSquare: 4.318
+   - pValue: 0.038
+   - **Interpretation**: There is a statistically significant association between wheezing and lung cancer at the 0.05 significance level.
+
+2. **COUGHING**: 
+   - ChiSquare: 3.153
+   - pValue: 0.076
+   - **Interpretation**: The association between coughing and lung cancer is not statistically significant at the 0.05 significance level, but it is close. This feature might still be important and could warrant further investigation.
+
+3. **ALCOHOL_CONSUMING**: 
+   - ChiSquare: 2.664
+   - pValue: 0.103
+   - **Interpretation**: There is no statistically significant association between alcohol consumption and lung cancer.
+
+4. **PEER_PRESSURE**: 
+   - ChiSquare: 1.725
+   - pValue: 0.189
+   - **Interpretation**: There is no statistically significant association between peer pressure and lung cancer.
+
+5. **GENDER**: 
+   - ChiSquare: 0.716
+   - pValue: 0.398
+   - **Interpretation**: There is no statistically significant association between gender and lung cancer.
+
+6. **ANXIETY**: 
+   - ChiSquare: 0.576
+   - pValue: 0.448
+   - **Interpretation**: There is no statistically significant association between anxiety and lung cancer.
+
+7. **SMOKING**: 
+   - ChiSquare: 0.551
+   - pValue: 0.458
+   - **Interpretation**: There is no statistically significant association between smoking and lung cancer in this dataset, which is surprising and might warrant further investigation or a review of the data.
+
+8. **YELLOW_FINGERS**: 
+   - ChiSquare: 0.457
+   - pValue: 0.499
+   - **Interpretation**: There is no statistically significant association between yellow fingers and lung cancer.
+
+9. **CHRONIC_DISEASE**: 
+   - ChiSquare: 0.275
+   - pValue: 0.600
+   - **Interpretation**: There is no statistically significant association between chronic disease and lung cancer.
+
+10. **SWALLOWING_DIFFICULTY**: 
+    - ChiSquare: 0.180
+    - pValue: 0.671
+    - **Interpretation**: There is no statistically significant association between swallowing difficulty and lung cancer.
+
+11. **ALLERGY**: 
+    - ChiSquare: 0.102
+    - pValue: 0.749
+    - **Interpretation**: There is no statistically significant association between allergy and lung cancer.
+
+12. **CHEST_PAIN**: 
+    - ChiSquare: 0.012
+    - pValue: 0.911
+    - **Interpretation**: There is no statistically significant association between chest pain and lung cancer.
+
+13. **SHORTNESS_OF_BREATH**: 
+    - ChiSquare: 0.009
+    - pValue: 0.925
+    - **Interpretation**: There is no statistically significant association between shortness of breath and lung cancer.
+
+14. **FATIGUE**: 
+    - ChiSquare: 0.008
+    - pValue: 0.931
+    - **Interpretation**: There is no statistically significant association between fatigue and lung cancer.
+
+### Summary
+Only the feature **WHEEZING** shows a statistically significant association with lung cancer at the 0.05 level. The other features do not show significant associations based on the provided p-values. This suggests that wheezing might be a potential indicator or risk factor for lung cancer and may warrant further investigation or consideration in predictive models.
+
+## Lasso regression for feature engineering
+
+```{r}
+library(glmnet)
+library(caret)
+library(pROC)
+
+# Separate features and target
+X <- model.matrix(LUNG_CANCER ~ ., data)[, -1]  # Create a model matrix and remove the intercept
+y <- data$LUNG_CANCER
+
+# Split the data
+set.seed(123)
+trainIndex <- createDataPartition(y, p = .8, list = FALSE, times = 1)
+X_train <- X[trainIndex, ]
+X_test <- X[-trainIndex, ]
+y_train <- y[trainIndex]
+y_test <- y[-trainIndex]
+
+# Standardize the continuous feature (age)
+# Note: glmnet automatically standardizes the features internally
+
+# Fit the Lasso Logistic Regression model with cross-validation
+cv.lasso <- cv.glmnet(X_train, y_train, alpha = 1, family = "binomial")
+
+# Get the best lambda (regularization parameter)
+best_lambda <- cv.lasso$lambda.min
+
+# Fit the final model on the training data
+lasso_model <- glmnet(X_train, y_train, alpha = 1, lambda = best_lambda, family = "binomial")
+
+# Predict and evaluate the model
+pred_probs <- predict(lasso_model, s = best_lambda, newx = X_test, type = "response")
+predictions <- ifelse(pred_probs > 0.5, 1, 0)
+
+# Evaluate performance
+conf_matrix <- confusionMatrix(as.factor(predictions), as.factor(y_test))
+accuracy <- conf_matrix$overall['Accuracy']
+precision <- conf_matrix$byClass['Pos Pred Value']
+recall <- conf_matrix$byClass['Sensitivity']
+
+# Calculate ROC AUC
+roc_obj <- roc(y_test, pred_probs)
+roc_auc <- auc(roc_obj)
+
+print(paste('Accuracy:', accuracy))
+print(paste('Precision:', precision))
+print(paste('Recall:', recall))
+print(paste('ROC-AUC:', roc_auc))
+
+# Identify selected features
+selected_features <- rownames(coef(lasso_model, s = best_lambda))[which(coef(lasso_model, s = best_lambda) != 0)]
+print('Selected Features:')
+selected_features <- selected_features[-grep("inter", selected_features, ignore.case = T)]
+```
+
+Lasso regression helps us identify that are most influential feature in predicting the `Lung_cancer` is `r selected_features`.
+
+If wheezing is the only feature with a non-zero coefficient after performing Lasso logistic regression, it indicates that wheezing is the most important predictor of the binary outcome having lung cancer. Here's a detailed interpretation:
+
+### Interpretation of Results
+
+1. **Significance of Wheezing**:
+   - Since wheezing is the only feature with a non-zero coefficient, it means that all other features were shrunk to zero by the Lasso regularization, indicating that they do not contribute significantly to predicting the outcome when wheezing is considered.
+
+2. **Magnitude and Sign of the Coefficient**:
+   - The coefficient for wheezing will tell you the direction and strength of the association with the outcome.
+   - A positive coefficient for wheezing means that the presence of wheezing increases the likelihood of having lung cancer.
+   - The magnitude of the coefficient indicates the strength of this association.
+
+### Example Code to Extract and Interpret the Coefficient
+
+Here's how you can extract and interpret the coefficient for wheezing in R:
+
+```{r}
+# Extract the coefficients of the final model
+coef_matrix <- coef(lasso_model, s = best_lambda)
+
+# Convert the sparse matrix to a data frame
+coef_df <- as.data.frame(as.matrix(coef_matrix))
+coef_df$Feature <- rownames(coef_df)
+
+# Filter to keep only the selected features (non-zero coefficients)
+selected_coef_df <- coef_df[coef_df$s1 != 0, ]
+
+# Print the coefficients of the selected features
+print('Selected Features and their Coefficients:')
+print(selected_coef_df)
+```
+
+**Intercept:** The intercept term (-3.2) is the baseline log-odds of having lung cancer when wheezing is absent (and all other predictors, if they were included, are zero).
+
+**WHEEZING:** The coefficient `r selected_coef_df["WHEEZING", "s1"]` indicates that the presence of wheezing increases the log-odds of having lung cancer by `r selected_coef_df["WHEEZING", "s1"]`.
+
+## Logistic regression
+
+```{r fig.align='center'}
+library(ResourceSelection)
+
+lmod <- glm(LUNG_CANCER ~  WHEEZING, family = binomial,  data = data)
+summary(lmod)
+
+# Predict probabilities
+pred_probs <- predict(lmod, type = "response")
+
+# Plot ROC curve and calculate AUC
+roc_obj <- roc(data$LUNG_CANCER, pred_probs)
+plot(roc_obj)
+auc_value <- auc(roc_obj)
+print(paste('AUC:', auc_value))
+```
+
+An AUC (Area Under the Curve) of 0.519 indicates that the model has a poor ability to discriminate between the two classes (having lung cancer or not). An AUC close to 0.5 suggests that the model is performing no better than random chance.
+
+**Interpretation and Next Steps**
+Given the low AUC, it's important to reassess the model and potentially make improvements. Here are some steps to consider:
+
+**Feature Engineering:** Add or transform features to capture more information.
+**Model Complexity:** Consider more complex models if logistic regression is too simplistic.
+**Regularization:** Ensure that regularization parameters are properly tuned.
+**Check Data Quality:** Ensure the data is clean and the features are meaningful
+
 # Session
 
 ```{r}
