@@ -1,14 +1,8 @@
 ---
 title: "predicting_lung_cancer"
-author: "Travis"
+author: "Charles"
 date: "Last compiled on `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  word_document:
-    toc: yes
-    toc_depth: '6'
-  pdf_document:
-    toc: yes
-    toc_depth: '6'
   html_document:
     theme: cosmo
     highlight: monochrome
@@ -16,6 +10,12 @@ output:
     toc_float: no
     toc_depth: 6
     code_folding: hide
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+  word_document:
+    toc: yes
+    toc_depth: '6'
 editor_options:
   chunk_output_type: console
 ---
@@ -41,3 +41,162 @@ pre {
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
+
+# Lung Cancer Risk Dataset
+
+## Overview
+
+This dataset contains information related to various factors that may influence the risk of lung cancer. The data includes demographic information, lifestyle habits, and symptoms that are commonly associated with lung cancer. This dataset can be used to explore correlations, build predictive models, and identify potential risk factors for lung cancer.
+
+## Columns:
+- **GENDER**: The gender of the individual (e.g., M for male, F for female).
+- **AGE**: The age of the individual in years.
+- **SMOKING**: Indicates whether the individual is a smoker (Yes/No).
+- **YELLOW_FINGERS**: Indicates whether the individual has yellow fingers (Yes/No).
+- **ANXIETY**: Indicates whether the individual suffers from anxiety (Yes/No).
+- **PEER_PRESSURE**: Indicates whether the individual is influenced by peer pressure (Yes/No).
+- **CHRONIC_DISEASE**: Indicates whether the individual has any chronic disease (Yes/No).
+- **FATIGUE**: Indicates whether the individual experiences fatigue (Yes/No).
+- **ALLERGY**: Indicates whether the individual has allergies (Yes/No).
+- **WHEEZING**: Indicates whether the individual has wheezing symptoms (Yes/No).
+- **ALCOHOL_CONSUMING**: Indicates whether the individual consumes alcohol (Yes/No).
+- **COUGHING**: Indicates whether the individual has a coughing symptom (Yes/No).
+- **SHORTNESS_OF_BREATH**: Indicates whether the individual experiences shortness of breath (Yes/No).
+- **SWALLOWING_DIFFICULTY**: Indicates whether the individual has difficulty swallowing (Yes/No).
+- **CHEST_PAIN**: Indicates whether the individual experiences chest pain (Yes/No).
+- **LUNG_CANCER**: Indicates whether the individual has been diagnosed with lung cancer (Yes/No).
+
+## Example Record
+- **GENDER**: M
+- **AGE**: 65
+- **SMOKING**: Yes
+- **YELLOW_FINGERS**: Yes
+- **ANXIETY**: Yes
+- **PEER_PRESSURE**: No
+- **CHRONIC_DISEASE**: No
+- **FATIGUE**: Yes
+- **ALLERGY**: No
+- **WHEEZING**: No
+- **ALCOHOL_CONSUMING**: No
+- **COUGHING**: No
+- **SHORTNESS_OF_BREATH**: No
+- **SWALLOWING_DIFFICULTY**: No
+- **CHEST_PAIN**: Yes
+- **LUNG_CANCER**: NO
+
+## loading libraries
+
+```{r}
+library(ggplot2) # visualisation
+library(corrr) # for correlation
+library(tidyverse) # data wrangling
+```
+
+# Analyses
+
+## Loading the dataset
+
+The dataset is a csv file in the in the `raw_data` directory called `dataseter.csv`.
+
+```{r}
+data <- read.csv("raw_data/dataseter.csv")
+head(data)
+```
+
+## Cleaning the data
+
+Inspecting the dataset above makes us realise that almost all the entries are binary and in text format except the age which is numerical. To achieve consistency, it will be important to convert `Yes` to `1` and `No` to `0`. 
+
+```{r}
+data[data == "Yes"] <- 1; data[data == "YES"] <- 1
+data[data == "No"] <- 0;  data[data == "NO"] <- 0
+head(data)
+```
+
+The gender column is binary and coded as `M` for male and `F` for female. Adjust such that male has the value of 1 and female the value of 0.
+
+```{r}
+data[data == "M"] <- 1
+data[data == "F"] <- 0
+head(data)
+```
+
+## Convert all characters to numeric
+
+```{r}
+str(data)
+```
+
+I need to convert all character entries into numeric format in order to perform linear correlation.
+
+```{r}
+data[] <- sapply(data, as.numeric)
+```
+
+## Point-biserial correlation between age and binary variables.
+
+```{r}
+data %>% 
+  select(where(is.numeric))%>%  
+  correlate()%>%  
+  shave()%>%  
+  rplot(print_cor =TRUE) +
+  ggtitle("Pearson correlation between variables") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        plot.title = element_text(hjust = 0.5))
+```
+
+### Interpretation of Shaved Correlation Coefficients
+
+The given table represents Pearson correlation coefficients between various terms in the lung cancer risk dataset. The coefficients range from -1 to 1, indicating the strength and direction of the linear relationship between pairs of variables.
+
+- **Correlation Coefficient**: A value between -1 and 1 that indicates the strength and direction of the linear relationship between two variables.
+  - `1` indicates a perfect positive correlation.
+  - `-1` indicates a perfect negative correlation.
+  - `0` indicates no linear correlation.
+
+### Key Interpretations
+
+1. **GENDER**:
+   - GENDER and other variables have very low correlation values close to 0, indicating almost no linear relationship.
+   
+2. **AGE**:
+   - AGE and other variables also show very low correlation values. For example, AGE and SMOKING have a correlation of 0.020, which is negligible.
+   
+3. **SMOKING**:
+   - SMOKING shows very low correlations with other variables. The highest is with CHRONIC_DISEASE (0.046), which is still very weak.
+   
+4. **YELLOW_FINGERS**:
+   - YELLOW_FINGERS has low correlations with all other variables. The highest correlation is with ALCOHOL_CONSUMING (0.027), which is insignificant.
+   
+5. **ANXIETY**:
+   - ANXIETY shows slightly higher but still weak negative correlations with PEER_PRESSURE (-0.025) and SHORTNESS_OF_BREATH (-0.035).
+   
+6. **PEER_PRESSURE**:
+   - PEER_PRESSURE has low correlations with all other variables, with the highest being with CHEST_PAIN (-0.039), which is still weak.
+   
+7. **CHRONIC_DISEASE**:
+   - CHRONIC_DISEASE shows weak correlations with SMOKING (0.046) and WHEEZING (0.022).
+
+8. **LUNG_CANCER**:
+   - LUNG_CANCER shows weak correlations with most variables. The highest is with WHEEZING (0.039) and ALCOHOL_CONSUMING (0.030).
+
+### General Observations
+
+- **Overall Weak Correlations**: The majority of the correlations are very close to 0, suggesting that there are no strong linear relationships between any pairs of variables in this dataset.
+- **Independent Variables**: Given the low correlation values, it seems the variables are fairly independent of each other.
+- **Potential Outliers**: Low correlations might indicate potential outliers or non-linear relationships that aren't captured by Pearson correlation.
+
+### Example Insights
+- **Age and Lung Cancer**: The correlation between AGE and LUNG_CANCER is -0.036, indicating no significant relationship.
+- **Smoking and Lung Cancer**: The correlation between SMOKING and LUNG_CANCER is -0.014, indicating no significant relationship in this dataset.
+- **Wheezing and Lung Cancer**: The correlation between WHEEZING and LUNG_CANCER is 0.039, the highest observed, but still very weak.
+
+In summary, the dataset's variables exhibit very weak correlations with each other, suggesting that any linear relationships are minimal or non-existent. For a more in-depth analysis, you may need to explore non-linear relationships or consider different statistical methods.
+
+# Session
+
+```{r}
+sessionInfo()
+```
+
