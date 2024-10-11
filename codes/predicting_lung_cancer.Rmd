@@ -90,6 +90,7 @@ This dataset contains information related to various factors that may influence 
 library(ggplot2) # visualisation
 library(corrr) # for correlation
 library(tidyverse) # data wrangling
+library(patchwork) # visualisation
 ```
 
 # Analyses
@@ -409,6 +410,60 @@ print(selected_coef_df)
 **Intercept:** The intercept term (-3.2) is the baseline log-odds of having lung cancer when wheezing is absent (and all other predictors, if they were included, are zero).
 
 **WHEEZING:** The coefficient `r selected_coef_df["WHEEZING", "s1"]` indicates that the presence of wheezing increases the log-odds of having lung cancer by `r selected_coef_df["WHEEZING", "s1"]`.
+
+## T test between age and lung cancer
+
+```{r}
+lc <- data[data$LUNG_CANCER == 1, ]$AGE
+no_lc <- data[data$LUNG_CANCER == 1, ]$AGE
+
+var.test(lc, no_lc)
+```
+
+Variance test gives p value of 1, meaning we cannot reject the null hypothesis of equal variance of age in the group of people with lung cancer vs people without.
+
+```{r}
+t.test(lc, no_lc, var.equal = T)
+```
+
+### Interpretation of t-test Results
+
+#### t-test Output
+```plaintext
+	Two Sample t-test
+
+data:  lc and no_lc
+t = 0, df = 3034, p-value = 1
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.060663  1.060663
+sample estimates:
+mean of x mean of y 
+ 54.64954  54.64954 
+```
+
+#### Key Points
+
+1. **t-Statistic (t)**: The t-statistic is 0. This indicates that the difference between the sample means of the two groups is zero standard deviations away from the null hypothesis value (which is also zero in this case).
+
+2. **Degrees of Freedom (df)**: The degrees of freedom for the test are 3034.
+
+3. **p-value**: The p-value is 1. A p-value of 1 suggests that there is no evidence to reject the null hypothesis, which states that the mean ages of people with lung cancer and those without lung cancer are the same.
+
+4. **Confidence Interval (95% CI)**: The 95% confidence interval for the difference in means is [-1.060663, 1.060663]. This interval includes 0, further indicating that there is no significant difference in the mean ages between the two groups.
+
+5. **Sample Estimates**:
+   - Mean age of people with lung cancer: 54.64954
+   - Mean age of people without lung cancer: 54.64954
+
+### Conclusion
+
+- **No Significant Difference**: The t-test results indicate that there is no significant difference in the mean ages of people with lung cancer and those without lung cancer.
+- **Implication**: Age, as analyzed by this t-test, does not appear to be a distinguishing factor between the two groups in your dataset.
+
+### Summary
+
+Based on the results of the t-test, age does not significantly differ between individuals with lung cancer and those without lung cancer in your dataset. This suggests that, in this particular sample, age is not a significant predictor of lung cancer.
 
 ## Logistic regression
 

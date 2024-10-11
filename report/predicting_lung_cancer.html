@@ -520,7 +520,7 @@ display: none;
 
 <h1 class="title toc-ignore">predicting_lung_cancer</h1>
 <h4 class="author">Charles</h4>
-<h4 class="date">Last compiled on 23 Juli, 2024</h4>
+<h4 class="date">Last compiled on 24 Juli, 2024</h4>
 
 </div>
 
@@ -554,6 +554,33 @@ Interpretations</a></li>
 <li><a href="#example-insights" id="toc-example-insights">Example
 Insights</a></li>
 </ul></li>
+<li><a href="#correlate-between-categorical-variables-using-the-chi-squared-test" id="toc-correlate-between-categorical-variables-using-the-chi-squared-test">correlate
+between categorical variables using the Chi squared test</a>
+<ul>
+<li><a href="#summary" id="toc-summary">Summary</a></li>
+</ul></li>
+<li><a href="#lasso-regression-for-feature-engineering" id="toc-lasso-regression-for-feature-engineering">Lasso regression for
+feature engineering</a>
+<ul>
+<li><a href="#interpretation-of-results" id="toc-interpretation-of-results">Interpretation of Results</a></li>
+<li><a href="#example-code-to-extract-and-interpret-the-coefficient" id="toc-example-code-to-extract-and-interpret-the-coefficient">Example
+Code to Extract and Interpret the Coefficient</a></li>
+</ul></li>
+<li><a href="#t-test-between-age-and-lung-cancer" id="toc-t-test-between-age-and-lung-cancer">T test between age and lung
+cancer</a>
+<ul>
+<li><a href="#interpretation-of-t-test-results" id="toc-interpretation-of-t-test-results">Interpretation of t-test
+Results</a>
+<ul>
+<li><a href="#t-test-output" id="toc-t-test-output">t-test
+Output</a></li>
+<li><a href="#key-points" id="toc-key-points">Key Points</a></li>
+</ul></li>
+<li><a href="#conclusion" id="toc-conclusion">Conclusion</a></li>
+<li><a href="#summary-1" id="toc-summary-1">Summary</a></li>
+</ul></li>
+<li><a href="#logistic-regression" id="toc-logistic-regression">Logistic
+regression</a></li>
 </ul></li>
 <li><a href="#session" id="toc-session">Session</a></li>
 </ul>
@@ -870,10 +897,538 @@ non-existent. For a more in-depth analysis, you may need to explore
 non-linear relationships or consider different statistical methods.</p>
 </div>
 </div>
+<div id="correlate-between-categorical-variables-using-the-chi-squared-test" class="section level2">
+<h2>correlate between categorical variables using the Chi squared
+test</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># convert to categorical</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>           <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="at">.cols =</span> <span class="sc">-</span><span class="fu">all_of</span>(<span class="st">&quot;AGE&quot;</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>                         <span class="at">.fns =</span> factor))</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co"># Load necessary packages</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">library</span>(vcd)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co"># Function to perform chi-square test and generate plots</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>analyze_features <span class="ot">&lt;-</span> <span class="cf">function</span>(feature) {</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="co"># Create contingency table</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  contingency_table <span class="ot">&lt;-</span> <span class="fu">table</span>(data[[feature]], data<span class="sc">$</span>LUNG_CANCER)</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  </span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  <span class="co"># Perform chi-square test</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  chi_test <span class="ot">&lt;-</span> <span class="fu">chisq.test</span>(contingency_table)</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>  </span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>  <span class="co"># Print chi-square test result</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Chi-square test result for&quot;</span>, feature))</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>  </span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>  <span class="fu">return</span>(chi_test)</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>}</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>categorical_features <span class="ot">&lt;-</span> <span class="fu">sapply</span>(data, is.factor)</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>categorical_features <span class="ot">&lt;-</span> categorical_features[categorical_features] </span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>categorical_features <span class="ot">&lt;-</span> <span class="fu">names</span>(categorical_features)[<span class="fu">names</span>(categorical_features) <span class="sc">!=</span> <span class="st">&quot;LUNG_CANCER&quot;</span>]</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co"># Perform analysis for each symptom and collect results</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">lapply</span>(categorical_features, analyze_features)</span></code></pre></div>
+<pre><code>## [1] &quot;Chi-square test result for GENDER&quot;
+## [1] &quot;Chi-square test result for SMOKING&quot;
+## [1] &quot;Chi-square test result for YELLOW_FINGERS&quot;
+## [1] &quot;Chi-square test result for ANXIETY&quot;
+## [1] &quot;Chi-square test result for PEER_PRESSURE&quot;
+## [1] &quot;Chi-square test result for CHRONIC_DISEASE&quot;
+## [1] &quot;Chi-square test result for FATIGUE&quot;
+## [1] &quot;Chi-square test result for ALLERGY&quot;
+## [1] &quot;Chi-square test result for WHEEZING&quot;
+## [1] &quot;Chi-square test result for ALCOHOL_CONSUMING&quot;
+## [1] &quot;Chi-square test result for COUGHING&quot;
+## [1] &quot;Chi-square test result for SHORTNESS_OF_BREATH&quot;
+## [1] &quot;Chi-square test result for SWALLOWING_DIFFICULTY&quot;
+## [1] &quot;Chi-square test result for CHEST_PAIN&quot;</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Summarize chi-square test results in a data frame</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>summary_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">features =</span> categorical_features,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">ChiSquare =</span> <span class="fu">sapply</span>(results, <span class="cf">function</span>(x) x<span class="sc">$</span>statistic),</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">pValue =</span> <span class="fu">sapply</span>(results, <span class="cf">function</span>(x) x<span class="sc">$</span>p.value)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co"># Print summary of results</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>summary_results <span class="ot">&lt;-</span> summary_results[<span class="fu">order</span>(summary_results<span class="sc">$</span>pValue, <span class="at">decreasing =</span> F), ]</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(summary_results,</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Features vs lung cancer Chi squared test&quot;</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>             <span class="st">&quot;pipe&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Features vs lung cancer Chi squared test</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">features</th>
+<th align="right">ChiSquare</th>
+<th align="right">pValue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">9</td>
+<td align="left">WHEEZING</td>
+<td align="right">4.3181649</td>
+<td align="right">0.0377076</td>
+</tr>
+<tr class="even">
+<td align="left">11</td>
+<td align="left">COUGHING</td>
+<td align="right">3.1532429</td>
+<td align="right">0.0757762</td>
+</tr>
+<tr class="odd">
+<td align="left">10</td>
+<td align="left">ALCOHOL_CONSUMING</td>
+<td align="right">2.6638736</td>
+<td align="right">0.1026505</td>
+</tr>
+<tr class="even">
+<td align="left">5</td>
+<td align="left">PEER_PRESSURE</td>
+<td align="right">1.7248010</td>
+<td align="right">0.1890762</td>
+</tr>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">GENDER</td>
+<td align="right">0.7158404</td>
+<td align="right">0.3975117</td>
+</tr>
+<tr class="even">
+<td align="left">4</td>
+<td align="left">ANXIETY</td>
+<td align="right">0.5761321</td>
+<td align="right">0.4478324</td>
+</tr>
+<tr class="odd">
+<td align="left">2</td>
+<td align="left">SMOKING</td>
+<td align="right">0.5510111</td>
+<td align="right">0.4579048</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">YELLOW_FINGERS</td>
+<td align="right">0.4565597</td>
+<td align="right">0.4992362</td>
+</tr>
+<tr class="odd">
+<td align="left">6</td>
+<td align="left">CHRONIC_DISEASE</td>
+<td align="right">0.2746290</td>
+<td align="right">0.6002434</td>
+</tr>
+<tr class="even">
+<td align="left">13</td>
+<td align="left">SWALLOWING_DIFFICULTY</td>
+<td align="right">0.1803835</td>
+<td align="right">0.6710439</td>
+</tr>
+<tr class="odd">
+<td align="left">8</td>
+<td align="left">ALLERGY</td>
+<td align="right">0.1023497</td>
+<td align="right">0.7490279</td>
+</tr>
+<tr class="even">
+<td align="left">14</td>
+<td align="left">CHEST_PAIN</td>
+<td align="right">0.0123889</td>
+<td align="right">0.9113740</td>
+</tr>
+<tr class="odd">
+<td align="left">12</td>
+<td align="left">SHORTNESS_OF_BREATH</td>
+<td align="right">0.0087992</td>
+<td align="right">0.9252650</td>
+</tr>
+<tr class="even">
+<td align="left">7</td>
+<td align="left">FATIGUE</td>
+<td align="right">0.0075061</td>
+<td align="right">0.9309593</td>
+</tr>
+</tbody>
+</table>
+<p>Based on the Chi-squared test results, here’s an interpretation of
+the significance of each feature with respect to the event of having
+lung cancer:</p>
+<ol style="list-style-type: decimal">
+<li><strong>WHEEZING</strong>:
+<ul>
+<li>ChiSquare: 4.318</li>
+<li>pValue: 0.038</li>
+<li><strong>Interpretation</strong>: There is a statistically
+significant association between wheezing and lung cancer at the 0.05
+significance level.</li>
+</ul></li>
+<li><strong>COUGHING</strong>:
+<ul>
+<li>ChiSquare: 3.153</li>
+<li>pValue: 0.076</li>
+<li><strong>Interpretation</strong>: The association between coughing
+and lung cancer is not statistically significant at the 0.05
+significance level, but it is close. This feature might still be
+important and could warrant further investigation.</li>
+</ul></li>
+<li><strong>ALCOHOL_CONSUMING</strong>:
+<ul>
+<li>ChiSquare: 2.664</li>
+<li>pValue: 0.103</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between alcohol consumption and lung
+cancer.</li>
+</ul></li>
+<li><strong>PEER_PRESSURE</strong>:
+<ul>
+<li>ChiSquare: 1.725</li>
+<li>pValue: 0.189</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between peer pressure and lung cancer.</li>
+</ul></li>
+<li><strong>GENDER</strong>:
+<ul>
+<li>ChiSquare: 0.716</li>
+<li>pValue: 0.398</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between gender and lung cancer.</li>
+</ul></li>
+<li><strong>ANXIETY</strong>:
+<ul>
+<li>ChiSquare: 0.576</li>
+<li>pValue: 0.448</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between anxiety and lung cancer.</li>
+</ul></li>
+<li><strong>SMOKING</strong>:
+<ul>
+<li>ChiSquare: 0.551</li>
+<li>pValue: 0.458</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between smoking and lung cancer in this dataset,
+which is surprising and might warrant further investigation or a review
+of the data.</li>
+</ul></li>
+<li><strong>YELLOW_FINGERS</strong>:
+<ul>
+<li>ChiSquare: 0.457</li>
+<li>pValue: 0.499</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between yellow fingers and lung cancer.</li>
+</ul></li>
+<li><strong>CHRONIC_DISEASE</strong>:
+<ul>
+<li>ChiSquare: 0.275</li>
+<li>pValue: 0.600</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between chronic disease and lung cancer.</li>
+</ul></li>
+<li><strong>SWALLOWING_DIFFICULTY</strong>:
+<ul>
+<li>ChiSquare: 0.180</li>
+<li>pValue: 0.671</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between swallowing difficulty and lung
+cancer.</li>
+</ul></li>
+<li><strong>ALLERGY</strong>:
+<ul>
+<li>ChiSquare: 0.102</li>
+<li>pValue: 0.749</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between allergy and lung cancer.</li>
+</ul></li>
+<li><strong>CHEST_PAIN</strong>:
+<ul>
+<li>ChiSquare: 0.012</li>
+<li>pValue: 0.911</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between chest pain and lung cancer.</li>
+</ul></li>
+<li><strong>SHORTNESS_OF_BREATH</strong>:
+<ul>
+<li>ChiSquare: 0.009</li>
+<li>pValue: 0.925</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between shortness of breath and lung
+cancer.</li>
+</ul></li>
+<li><strong>FATIGUE</strong>:
+<ul>
+<li>ChiSquare: 0.008</li>
+<li>pValue: 0.931</li>
+<li><strong>Interpretation</strong>: There is no statistically
+significant association between fatigue and lung cancer.</li>
+</ul></li>
+</ol>
+<div id="summary" class="section level3">
+<h3>Summary</h3>
+<p>Only the feature <strong>WHEEZING</strong> shows a statistically
+significant association with lung cancer at the 0.05 level. The other
+features do not show significant associations based on the provided
+p-values. This suggests that wheezing might be a potential indicator or
+risk factor for lung cancer and may warrant further investigation or
+consideration in predictive models.</p>
+</div>
+</div>
+<div id="lasso-regression-for-feature-engineering" class="section level2">
+<h2>Lasso regression for feature engineering</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">library</span>(pROC)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co"># Separate features and target</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(LUNG_CANCER <span class="sc">~</span> ., data)[, <span class="sc">-</span><span class="dv">1</span>]  <span class="co"># Create a model matrix and remove the intercept</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>y <span class="ot">&lt;-</span> data<span class="sc">$</span>LUNG_CANCER</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co"># Split the data</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>trainIndex <span class="ot">&lt;-</span> <span class="fu">createDataPartition</span>(y, <span class="at">p =</span> .<span class="dv">8</span>, <span class="at">list =</span> <span class="cn">FALSE</span>, <span class="at">times =</span> <span class="dv">1</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> X[trainIndex, ]</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>X_test <span class="ot">&lt;-</span> X[<span class="sc">-</span>trainIndex, ]</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>y_train <span class="ot">&lt;-</span> y[trainIndex]</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>y_test <span class="ot">&lt;-</span> y[<span class="sc">-</span>trainIndex]</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="co"># Standardize the continuous feature (age)</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="co"># Note: glmnet automatically standardizes the features internally</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="co"># Fit the Lasso Logistic Regression model with cross-validation</span></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>cv.lasso <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(X_train, y_train, <span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co"># Get the best lambda (regularization parameter)</span></span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>best_lambda <span class="ot">&lt;-</span> cv.lasso<span class="sc">$</span>lambda.min</span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a></span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a><span class="co"># Fit the final model on the training data</span></span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>lasso_model <span class="ot">&lt;-</span> <span class="fu">glmnet</span>(X_train, y_train, <span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">lambda =</span> best_lambda, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a></span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="co"># Predict and evaluate the model</span></span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a>pred_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(lasso_model, <span class="at">s =</span> best_lambda, <span class="at">newx =</span> X_test, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
+<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(pred_probs <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a></span>
+<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a><span class="co"># Evaluate performance</span></span>
+<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a>conf_matrix <span class="ot">&lt;-</span> <span class="fu">confusionMatrix</span>(<span class="fu">as.factor</span>(predictions), <span class="fu">as.factor</span>(y_test))</span>
+<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a>accuracy <span class="ot">&lt;-</span> conf_matrix<span class="sc">$</span>overall[<span class="st">&#39;Accuracy&#39;</span>]</span>
+<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a>precision <span class="ot">&lt;-</span> conf_matrix<span class="sc">$</span>byClass[<span class="st">&#39;Pos Pred Value&#39;</span>]</span>
+<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a>recall <span class="ot">&lt;-</span> conf_matrix<span class="sc">$</span>byClass[<span class="st">&#39;Sensitivity&#39;</span>]</span>
+<span id="cb15-38"><a href="#cb15-38" tabindex="-1"></a></span>
+<span id="cb15-39"><a href="#cb15-39" tabindex="-1"></a><span class="co"># Calculate ROC AUC</span></span>
+<span id="cb15-40"><a href="#cb15-40" tabindex="-1"></a>roc_obj <span class="ot">&lt;-</span> <span class="fu">roc</span>(y_test, pred_probs)</span>
+<span id="cb15-41"><a href="#cb15-41" tabindex="-1"></a>roc_auc <span class="ot">&lt;-</span> <span class="fu">auc</span>(roc_obj)</span>
+<span id="cb15-42"><a href="#cb15-42" tabindex="-1"></a></span>
+<span id="cb15-43"><a href="#cb15-43" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;Accuracy:&#39;</span>, accuracy))</span></code></pre></div>
+<pre><code>## [1] &quot;Accuracy: 0.50584307178631&quot;</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;Precision:&#39;</span>, precision))</span></code></pre></div>
+<pre><code>## [1] &quot;Precision: NaN&quot;</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;Recall:&#39;</span>, recall))</span></code></pre></div>
+<pre><code>## [1] &quot;Recall: 0&quot;</code></pre>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;ROC-AUC:&#39;</span>, roc_auc))</span></code></pre></div>
+<pre><code>## [1] &quot;ROC-AUC: 0.5&quot;</code></pre>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="co"># Identify selected features</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>selected_features <span class="ot">&lt;-</span> <span class="fu">rownames</span>(<span class="fu">coef</span>(lasso_model, <span class="at">s =</span> best_lambda))[<span class="fu">which</span>(<span class="fu">coef</span>(lasso_model, <span class="at">s =</span> best_lambda) <span class="sc">!=</span> <span class="dv">0</span>)]</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&#39;Selected Features:&#39;</span>)</span></code></pre></div>
+<pre><code>## [1] &quot;Selected Features:&quot;</code></pre>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>selected_features <span class="ot">&lt;-</span> selected_features[<span class="sc">-</span><span class="fu">grep</span>(<span class="st">&quot;inter&quot;</span>, selected_features, <span class="at">ignore.case =</span> T)]</span></code></pre></div>
+<p>Lasso regression helps us identify that are most influential feature
+in predicting the <code>Lung_cancer</code> is WHEEZING1.</p>
+<p>If wheezing is the only feature with a non-zero coefficient after
+performing Lasso logistic regression, it indicates that wheezing is the
+most important predictor of the binary outcome having lung cancer.
+Here’s a detailed interpretation:</p>
+<div id="interpretation-of-results" class="section level3">
+<h3>Interpretation of Results</h3>
+<ol style="list-style-type: decimal">
+<li><strong>Significance of Wheezing</strong>:
+<ul>
+<li>Since wheezing is the only feature with a non-zero coefficient, it
+means that all other features were shrunk to zero by the Lasso
+regularization, indicating that they do not contribute significantly to
+predicting the outcome when wheezing is considered.</li>
+</ul></li>
+<li><strong>Magnitude and Sign of the Coefficient</strong>:
+<ul>
+<li>The coefficient for wheezing will tell you the direction and
+strength of the association with the outcome.</li>
+<li>A positive coefficient for wheezing means that the presence of
+wheezing increases the likelihood of having lung cancer.</li>
+<li>The magnitude of the coefficient indicates the strength of this
+association.</li>
+</ul></li>
+</ol>
+</div>
+<div id="example-code-to-extract-and-interpret-the-coefficient" class="section level3">
+<h3>Example Code to Extract and Interpret the Coefficient</h3>
+<p>Here’s how you can extract and interpret the coefficient for wheezing
+in R:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="co"># Extract the coefficients of the final model</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>coef_matrix <span class="ot">&lt;-</span> <span class="fu">coef</span>(lasso_model, <span class="at">s =</span> best_lambda)</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a><span class="co"># Convert the sparse matrix to a data frame</span></span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>coef_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">as.matrix</span>(coef_matrix))</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>coef_df<span class="sc">$</span>Feature <span class="ot">&lt;-</span> <span class="fu">rownames</span>(coef_df)</span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a><span class="co"># Filter to keep only the selected features (non-zero coefficients)</span></span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a>selected_coef_df <span class="ot">&lt;-</span> coef_df[coef_df<span class="sc">$</span>s1 <span class="sc">!=</span> <span class="dv">0</span>, ]</span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a><span class="co"># Print the coefficients of the selected features</span></span>
+<span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&#39;Selected Features and their Coefficients:&#39;</span>)</span></code></pre></div>
+<pre><code>## [1] &quot;Selected Features and their Coefficients:&quot;</code></pre>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="fu">print</span>(selected_coef_df)</span></code></pre></div>
+<pre><code>##                       s1     Feature
+## (Intercept) 2.415778e-02 (Intercept)
+## WHEEZING1   5.553082e-17   WHEEZING1</code></pre>
+<p><strong>Intercept:</strong> The intercept term (-3.2) is the baseline
+log-odds of having lung cancer when wheezing is absent (and all other
+predictors, if they were included, are zero).</p>
+<p><strong>WHEEZING:</strong> The coefficient 5.5530816^{-17} indicates
+that the presence of wheezing increases the log-odds of having lung
+cancer by 5.5530816^{-17}.</p>
+</div>
+</div>
+<div id="t-test-between-age-and-lung-cancer" class="section level2">
+<h2>T test between age and lung cancer</h2>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>lc <span class="ot">&lt;-</span> data[data<span class="sc">$</span>LUNG_CANCER <span class="sc">==</span> <span class="dv">1</span>, ]<span class="sc">$</span>AGE</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>no_lc <span class="ot">&lt;-</span> data[data<span class="sc">$</span>LUNG_CANCER <span class="sc">==</span> <span class="dv">1</span>, ]<span class="sc">$</span>AGE</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a><span class="fu">var.test</span>(lc, no_lc)</span></code></pre></div>
+<pre><code>## 
+##  F test to compare two variances
+## 
+## data:  lc and no_lc
+## F = 1, num df = 1517, denom df = 1517, p-value = 1
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.9042212 1.1059241
+## sample estimates:
+## ratio of variances 
+##                  1</code></pre>
+<p>Variance test gives p value of 1, meaning we cannot reject the null
+hypothesis of equal variance of age in the group of people with lung
+cancer vs people without.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="fu">t.test</span>(lc, no_lc, <span class="at">var.equal =</span> T)</span></code></pre></div>
+<pre><code>## 
+##  Two Sample t-test
+## 
+## data:  lc and no_lc
+## t = 0, df = 3034, p-value = 1
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -1.060663  1.060663
+## sample estimates:
+## mean of x mean of y 
+##  54.64954  54.64954</code></pre>
+<div id="interpretation-of-t-test-results" class="section level3">
+<h3>Interpretation of t-test Results</h3>
+<div id="t-test-output" class="section level4">
+<h4>t-test Output</h4>
+<pre class="plaintext"><code>    Two Sample t-test
+
+data:  lc and no_lc
+t = 0, df = 3034, p-value = 1
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.060663  1.060663
+sample estimates:
+mean of x mean of y 
+ 54.64954  54.64954 </code></pre>
+</div>
+<div id="key-points" class="section level4">
+<h4>Key Points</h4>
+<ol style="list-style-type: decimal">
+<li><p><strong>t-Statistic (t)</strong>: The t-statistic is 0. This
+indicates that the difference between the sample means of the two groups
+is zero standard deviations away from the null hypothesis value (which
+is also zero in this case).</p></li>
+<li><p><strong>Degrees of Freedom (df)</strong>: The degrees of freedom
+for the test are 3034.</p></li>
+<li><p><strong>p-value</strong>: The p-value is 1. A p-value of 1
+suggests that there is no evidence to reject the null hypothesis, which
+states that the mean ages of people with lung cancer and those without
+lung cancer are the same.</p></li>
+<li><p><strong>Confidence Interval (95% CI)</strong>: The 95% confidence
+interval for the difference in means is [-1.060663, 1.060663]. This
+interval includes 0, further indicating that there is no significant
+difference in the mean ages between the two groups.</p></li>
+<li><p><strong>Sample Estimates</strong>:</p>
+<ul>
+<li>Mean age of people with lung cancer: 54.64954</li>
+<li>Mean age of people without lung cancer: 54.64954</li>
+</ul></li>
+</ol>
+</div>
+</div>
+<div id="conclusion" class="section level3">
+<h3>Conclusion</h3>
+<ul>
+<li><strong>No Significant Difference</strong>: The t-test results
+indicate that there is no significant difference in the mean ages of
+people with lung cancer and those without lung cancer.</li>
+<li><strong>Implication</strong>: Age, as analyzed by this t-test, does
+not appear to be a distinguishing factor between the two groups in your
+dataset.</li>
+</ul>
+</div>
+<div id="summary-1" class="section level3">
+<h3>Summary</h3>
+<p>Based on the results of the t-test, age does not significantly differ
+between individuals with lung cancer and those without lung cancer in
+your dataset. This suggests that, in this particular sample, age is not
+a significant predictor of lung cancer.</p>
+</div>
+</div>
+<div id="logistic-regression" class="section level2">
+<h2>Logistic regression</h2>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="fu">library</span>(ResourceSelection)</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a>lmod <span class="ot">&lt;-</span> <span class="fu">glm</span>(LUNG_CANCER <span class="sc">~</span>  WHEEZING, <span class="at">family =</span> binomial,  <span class="at">data =</span> data)</span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a><span class="fu">summary</span>(lmod)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = LUNG_CANCER ~ WHEEZING, family = binomial, data = data)
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)  
+## (Intercept) -0.05363    0.05180  -1.035   0.3005  
+## WHEEZING1    0.15451    0.07309   2.114   0.0345 *
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 4158.5  on 2999  degrees of freedom
+## Residual deviance: 4154.0  on 2998  degrees of freedom
+## AIC: 4158
+## 
+## Number of Fisher Scoring iterations: 3</code></pre>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a><span class="co"># Predict probabilities</span></span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>pred_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(lmod, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a><span class="co"># Plot ROC curve and calculate AUC</span></span>
+<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a>roc_obj <span class="ot">&lt;-</span> <span class="fu">roc</span>(data<span class="sc">$</span>LUNG_CANCER, pred_probs)</span>
+<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a><span class="fu">plot</span>(roc_obj)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>auc_value <span class="ot">&lt;-</span> <span class="fu">auc</span>(roc_obj)</span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;AUC:&#39;</span>, auc_value))</span></code></pre></div>
+<pre><code>## [1] &quot;AUC: 0.519304113125623&quot;</code></pre>
+<p>An AUC (Area Under the Curve) of 0.519 indicates that the model has a
+poor ability to discriminate between the two classes (having lung cancer
+or not). An AUC close to 0.5 suggests that the model is performing no
+better than random chance.</p>
+<p><strong>Interpretation and Next Steps</strong> Given the low AUC,
+it’s important to reassess the model and potentially make improvements.
+Here are some steps to consider:</p>
+<p><strong>Feature Engineering:</strong> Add or transform features to
+capture more information. <strong>Model Complexity:</strong> Consider
+more complex models if logistic regression is too simplistic.
+<strong>Regularization:</strong> Ensure that regularization parameters
+are properly tuned. <strong>Check Data Quality:</strong> Ensure the data
+is clean and the features are meaningful</p>
+</div>
 </div>
 <div id="session" class="section level1">
 <h1>Session</h1>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>## R version 4.3.3 (2024-02-29 ucrt)
 ## Platform: x86_64-w64-mingw32/x64 (64-bit)
 ## Running under: Windows 11 x64 (build 22631)
@@ -890,25 +1445,43 @@ non-linear relationships or consider different statistical methods.</p>
 ## tzcode source: internal
 ## 
 ## attached base packages:
-## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## [1] grid      stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
 ## 
 ## other attached packages:
-##  [1] lubridate_1.9.3 forcats_1.0.0   stringr_1.5.1   dplyr_1.1.4    
-##  [5] purrr_1.0.2     readr_2.1.5     tidyr_1.3.1     tibble_3.2.1   
-##  [9] tidyverse_2.0.0 corrr_0.4.4     ggplot2_3.5.0  
+##  [1] ResourceSelection_0.3-6 pROC_1.18.5             caret_6.0-94           
+##  [4] lattice_0.22-5          glmnet_4.1-8            Matrix_1.6-5           
+##  [7] vcd_1.4-12              lubridate_1.9.3         forcats_1.0.0          
+## [10] stringr_1.5.1           dplyr_1.1.4             purrr_1.0.2            
+## [13] readr_2.1.5             tidyr_1.3.1             tibble_3.2.1           
+## [16] tidyverse_2.0.0         corrr_0.4.4             ggplot2_3.5.0          
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] gtable_0.3.4      jsonlite_1.8.8    highr_0.10        compiler_4.3.3   
-##  [5] tidyselect_1.2.1  jquerylib_0.1.4   scales_1.3.0      yaml_2.3.8       
-##  [9] fastmap_1.1.1     R6_2.5.1          labeling_0.4.3    generics_0.1.3   
-## [13] knitr_1.46        munsell_0.5.1     bslib_0.7.0       pillar_1.9.0     
-## [17] tzdb_0.4.0        rlang_1.1.3       utf8_1.2.4        stringi_1.8.3    
-## [21] cachem_1.0.8      xfun_0.43         sass_0.4.9        timechange_0.3.0 
-## [25] cli_3.6.2         withr_3.0.0       magrittr_2.0.3    digest_0.6.35    
-## [29] grid_4.3.3        rstudioapi_0.16.0 hms_1.1.3         lifecycle_1.0.4  
-## [33] vctrs_0.6.5       evaluate_0.23     glue_1.7.0        farver_2.1.1     
-## [37] fansi_1.0.6       colorspace_2.1-0  rmarkdown_2.26    tools_4.3.3      
-## [41] pkgconfig_2.0.3   htmltools_0.5.8.1</code></pre>
+##  [1] tidyselect_1.2.1     timeDate_4032.109    farver_2.1.1        
+##  [4] fastmap_1.1.1        digest_0.6.35        rpart_4.1.23        
+##  [7] timechange_0.3.0     lifecycle_1.0.4      survival_3.5-8      
+## [10] magrittr_2.0.3       compiler_4.3.3       rlang_1.1.3         
+## [13] sass_0.4.9           tools_4.3.3          utf8_1.2.4          
+## [16] yaml_2.3.8           data.table_1.15.4    knitr_1.46          
+## [19] labeling_0.4.3       plyr_1.8.9           withr_3.0.0         
+## [22] nnet_7.3-19          stats4_4.3.3         fansi_1.0.6         
+## [25] e1071_1.7-14         colorspace_2.1-0     future_1.33.2       
+## [28] globals_0.16.3       scales_1.3.0         iterators_1.0.14    
+## [31] MASS_7.3-60.0.1      cli_3.6.2            rmarkdown_2.26      
+## [34] generics_0.1.3       rstudioapi_0.16.0    future.apply_1.11.2 
+## [37] reshape2_1.4.4       tzdb_0.4.0           proxy_0.4-27        
+## [40] cachem_1.0.8         splines_4.3.3        parallel_4.3.3      
+## [43] vctrs_0.6.5          hardhat_1.3.1        jsonlite_1.8.8      
+## [46] hms_1.1.3            listenv_0.9.1        foreach_1.5.2       
+## [49] gower_1.0.1          jquerylib_0.1.4      recipes_1.0.10      
+## [52] glue_1.7.0           parallelly_1.37.1    codetools_0.2-19    
+## [55] stringi_1.8.3        shape_1.4.6.1        gtable_0.3.4        
+## [58] lmtest_0.9-40        munsell_0.5.1        pillar_1.9.0        
+## [61] htmltools_0.5.8.1    ipred_0.9-14         lava_1.8.0          
+## [64] R6_2.5.1             evaluate_0.23        highr_0.10          
+## [67] bslib_0.7.0          class_7.3-22         Rcpp_1.0.12         
+## [70] nlme_3.1-164         prodlim_2024.06.25   xfun_0.43           
+## [73] zoo_1.8-12           pkgconfig_2.0.3      ModelMetrics_1.2.2.2</code></pre>
 </div>
 
 
