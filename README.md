@@ -3,6 +3,15 @@
 ## Overview
 This repository contains an R script for analyzing and predicting lung cancer risk using a dataset that includes demographic, lifestyle, and health-related factors. The script processes the data, performs various statistical analyses, and applies machine learning techniques like Lasso regression and logistic regression to identify key predictors of lung cancer.
 
+## Dataset Source
+
+The lung cancer risk dataset used in this project was obtained from Kaggle. You can access the original dataset through the following link:
+
+[Lung Cancer Risk Dataset on Kaggle]([https://www.kaggle.com/](https://www.kaggle.com/datasets/shreyasparaj1/lung-cancer-dataset)
+
+
+Make sure to include the exact URL of the Kaggle dataset if you have it handy. This gives proper credit to the dataset contributors and allows others to find it if they want to replicate or extend the analysis.
+
 ## Dataset
 The dataset consists of the following columns:
 
